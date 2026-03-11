@@ -17,29 +17,21 @@ with sync_playwright() as p:
     )
     page = context.new_page()
 
+    # Load page 1 and wait for human to solve the CF challenge once
+    print(f"Opening {BASE_URL} — solve the Cloudflare challenge in the browser window.")
+    page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30000)
+    input("Press Enter here once the page has fully loaded past the challenge...")
+
     for n in range(1, 21):
         url = BASE_URL if n == 1 else f"{BASE_URL}page/{n}/"
         print(f"Fetching page {n}: {url}")
 
         try:
-            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            if n > 1:
+                page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                page.wait_for_timeout(2000)
 
-            # Wait for Cloudflare challenge to resolve — title changes from "Just a moment..."
-            try:
-                page.wait_for_function(
-                    "document.title !== 'Just a moment...'",
-                    timeout=20000
-                )
-            except Exception:
-                print(f"  CF challenge did not resolve on page {n}, skipping")
-                time.sleep(2)
-                continue
-
-            status = page.evaluate("() => window.__cf_chl_opt ? 403 : 200") if "cf_chl" in page.content() else 200
             print(f"  Loaded: {page.title()[:60]}")
-
-            # Wait a moment for any JS rendering
-            page.wait_for_timeout(1500)
 
             html = page.content()
             soup = BeautifulSoup(html, "html.parser")
