@@ -7,23 +7,27 @@ import random
 BASE_URL = "https://tut4it.com/topics/management-training/"
 
 print("""
-Steps to get your cf_clearance cookie:
-1. Open https://tut4it.com/topics/management-training/ in Safari or Chrome
+Instructions:
+1. Open https://tut4it.com/topics/management-training/ in Chrome
 2. Solve the Cloudflare challenge
-3. Open DevTools (Cmd+Option+I) > Application > Cookies > tut4it.com
-4. Copy the value of 'cf_clearance'
+3. Open DevTools (Cmd+Option+I) > Network tab
+4. Reload the page (Cmd+R)
+5. Click the first request (topics/management-training/)
+6. Under 'Request Headers', copy the full value of 'cookie'
+7. Also copy the full value of 'user-agent'
 """)
 
-cf_clearance = input("Paste cf_clearance value here: ").strip()
+cookie_header = input("Paste full 'cookie' header value: ").strip()
+user_agent = input("Paste 'user-agent' value: ").strip()
 
 session = requests.Session()
 session.headers.update({
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "User-Agent": user_agent,
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
     "Referer": "https://tut4it.com/",
+    "Cookie": cookie_header,
 })
-session.cookies.set("cf_clearance", cf_clearance, domain=".tut4it.com")
 
 all_titles = []
 debug_printed = False
