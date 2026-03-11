@@ -10,9 +10,8 @@ all_titles = []
 debug_printed = False
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
+    browser = p.chromium.launch(headless=False)
     context = browser.new_context(
-        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         viewport={"width": 1280, "height": 800},
         locale="en-US",
     )
@@ -23,14 +22,21 @@ with sync_playwright() as p:
         print(f"Fetching page {n}: {url}")
 
         try:
-            resp = page.goto(url, wait_until="domcontentloaded", timeout=30000)
-            status = resp.status if resp else "?"
-            print(f"  Status: {status}")
+            page.goto(url, wait_until="domcontentloaded", timeout=30000)
 
-            if status != 200:
-                print(f"  Skipping page {n} (non-200)")
-                time.sleep(random.uniform(1.5, 3.0))
+            # Wait for Cloudflare challenge to resolve — title changes from "Just a moment..."
+            try:
+                page.wait_for_function(
+                    "document.title !== 'Just a moment...'",
+                    timeout=20000
+                )
+            except Exception:
+                print(f"  CF challenge did not resolve on page {n}, skipping")
+                time.sleep(2)
                 continue
+
+            status = page.evaluate("() => window.__cf_chl_opt ? 403 : 200") if "cf_chl" in page.content() else 200
+            print(f"  Loaded: {page.title()[:60]}")
 
             # Wait a moment for any JS rendering
             page.wait_for_timeout(1500)
