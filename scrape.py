@@ -1,4 +1,3 @@
-from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -7,32 +6,25 @@ import random
 
 BASE_URL = "https://tut4it.com/topics/management-training/"
 
-# Step 1: open real browser, let user solve CF challenge, steal the cookies
-print("Opening browser — solve the Cloudflare challenge, then come back here and press Enter.")
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=False)
-    context = browser.new_context(viewport={"width": 1280, "height": 800})
-    page = context.new_page()
-    page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30000)
-    input("Press Enter once the page has fully loaded past the challenge...")
-    cookies = context.cookies()
-    browser.close()
+print("""
+Steps to get your cf_clearance cookie:
+1. Open https://tut4it.com/topics/management-training/ in Safari or Chrome
+2. Solve the Cloudflare challenge
+3. Open DevTools (Cmd+Option+I) > Application > Cookies > tut4it.com
+4. Copy the value of 'cf_clearance'
+""")
 
-# Step 2: build a requests session using the stolen cookies
+cf_clearance = input("Paste cf_clearance value here: ").strip()
+
 session = requests.Session()
 session.headers.update({
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
     "Referer": "https://tut4it.com/",
 })
-for c in cookies:
-    session.cookies.set(c["name"], c["value"], domain=c.get("domain", "tut4it.com"))
+session.cookies.set("cf_clearance", cf_clearance, domain=".tut4it.com")
 
-cf_clearance = next((c["value"] for c in cookies if c["name"] == "cf_clearance"), None)
-print(f"cf_clearance cookie: {'found' if cf_clearance else 'NOT FOUND — challenge may not have been solved'}")
-
-# Step 3: scrape all 20 pages with requests
 all_titles = []
 debug_printed = False
 
